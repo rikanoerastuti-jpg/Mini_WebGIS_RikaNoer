@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mini WebGIS</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    #map {
+      width: 100%;
+      height: 400px;
+      border: 1px solid #ccc;
+    }
+
+    #info {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #f8f8f8;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Mini WebGIS</h2>
+
+  <label for="markerType">Marker Type:</label>
+  <select id="markerType">
+    <option value="red">Red Marker</option>
+    <option value="blue">Blue Marker</option>
+    <option value="green">Green Marker</option>
+  </select>
+
+  <button id="btnAdd">Add Marker</button>
+  <button id="btnClear">Clear All Markers</button>
+  <button id="btnToggle">Toggle Marker Layer</button>
+
+  <div id="map"></div>
+  <p id="info">Select a marker</p>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    let info = document.getElementById("info");
+    let markerType = document.getElementById("markerType");
+    let markerVisible = true;
+
+    let map = L.map('map').setView([-7.7956, 110.3695], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    class Marker {
+      constructor(lat, lng, type) {
+        this.lat = lat;
+        this.lng = lng;
+        this.type = type;
+
+        this.element = L.circleMarker([lat, lng], {
+          radius: 8,
+          color: "black",
+          weight: 1,
+          fillColor: this.getColor(type),
+          fillOpacity: 1
+        });
+
+        this.element.on("click", () => this.onClick());
+      }
+
+      getColor(type) {
+        if (type === "red") return "red";
+        if (type === "blue") return "blue";
+        if (type === "green") return "green";
+        return "black";
+      }
+
+      onClick() {
+        info.textContent =
+          "Marker clicked! Type: " + this.type +
+          " | Lat: " + this.lat.toFixed(5) +
+          " | Lng: " + this.lng.toFixed(5);
+      }
+
+      addTo(map) {
+        this.element.addTo(map);
+      }
+
+      hide() {
+        map.removeLayer(this.element);
+      }
+
+      show() {
+        this.element.addTo(map);
+      }
+
+      remove() {
+        map.removeLayer(this.element);
+      }
+    }
+
+    let markers = [];
+
+    document.getElementById("btnAdd").addEventListener("click", function() {
+      let type = markerType.value;
+
+      let bounds = map.getBounds();
+      let lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
+      let lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
+
+      let marker = new Marker(lat, lng, type);
+      marker.addTo(map);
+      markers.push(marker);
+
+      info.textContent = type + " marker added";
+    });
+
+    document.getElementById("btnClear").addEventListener("click", function() {
+      markers.forEach(function(marker) {
+        marker.remove();
+      });
+
+      markers = [];
+      info.textContent = "All markers cleared";
+    });
+
+    document.getElementById("btnToggle").addEventListener("click", function() {
+      markerVisible = !markerVisible;
+
+      markers.forEach(function(marker) {
+        if (markerVisible) {
+          marker.show();
+        } else {
+          marker.hide();
+        }
+      });
+
+      if (markerVisible) {
+        info.textContent = "Marker layer is visible";
+      } else {
+        info.textContent = "Marker layer is hidden";
+      }
+    });
+  </script>
+</body>
+</html>
